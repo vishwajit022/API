@@ -1,46 +1,48 @@
-import https from "https";
 import express from "express";
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-const __dirname = dirname(fileURLToPath(
-    import.meta.url));
+import bodyParser from "body-parser";
+import axios from "axios";
 
 const app = express();
+const port = 3000;
 
-app.get("/", (req, res) => {
-    const options = {
-        hostname: "bored-api.app",
-        path: "/api/activity",
-        method: "GET",
-    };
+app.use(express.static("public"));
+app.use(bodyParser.urlencoded({ extended: true }));
 
-    const request = https.request(options, (response) => {
-        let data = "";
-        console.log(`Response status code: ${response.statusCode}`);
-
-        response.on("data", (chunk) => {
-            data += chunk;
-        });
-
-        response.on("end", () => {
-            try {
-                const result = JSON.parse(data);
-                res.render(__dirname + "/index.ejs", { activity: result.activity });
-            } catch (error) {
-                console.error("Failed to parse response", error.message);
-                res.status(500).send("Failed to send Activity. Please try again");
-            }
-        });
-    });
-
-    request.on("error", (error) => {
+app.get("/", async(req, res) => {
+    try {
+        const response = await axios.get("https://bored-api.appbrewery.com/random");
+        const result = response.data;
+        console.log(result);
+        res.render("solution.ejs", { data: result });
+    } catch (error) {
         console.error("Failed to make request:", error.message);
-        res.status(500).send("Failed to fetch activity. Please try again");
-    });
-
-    request.end();
+        res.render("solution.ejs", {
+            error: error.message,
+        });
+    }
 });
 
-app.listen(3000, () => {
-    console.log("Server is running on port 3000");
+app.post("/", async(req, res) => {
+    try {
+        console.log(req.body);
+        const type = req.body.type;
+        const participants = req.body.participants;
+        const response = await axios.get(
+            `https://bored-api.appbrewery.com/filter?type=${type}&participants=${participants}`
+        );
+        const result = response.data;
+        console.log(result);
+        res.render("solution.ejs", {
+            data: result[Math.floor(Math.random() * result.length)],
+        });
+    } catch (error) {
+        console.error("Failed to make request:", error.message);
+        res.render("solution.ejs", {
+            error: "No activities that match your criteria.",
+        });
+    }
+});
+
+app.listen(port, () => {
+    console.log(`Server running on port: ${port}`);
 });

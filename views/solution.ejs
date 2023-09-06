@@ -34,18 +34,18 @@
             <button type="submit" class="form-submit">Go</button>
         </form>
         <section id="cards" class="cards">
-            <%if (locals.result) {%>
+            <%if (locals.data) {%>
 
                 <article class="card-item">
                     <h2 class="card-activity">
-                        <%=result.activity %>
+                        <%=data.activity %>
                     </h2>
                     <div class="card-info">
                         <span class="card-type">
-              <%=result.type%>
+              <%=data.type%>
             </span>
                         <span class="card-participants">
-              participants: <%= result.participants%>
+              participants: <%= data.participants%>
                 <span class="card-number"></span>
                         </span>
                     </div>
