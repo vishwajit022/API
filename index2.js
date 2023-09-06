@@ -1,7 +1,8 @@
 import express from "express";
 import bodyParser from "body-parser";
 import https from "https"; // Import the 'https' module
-import fs from "fs"; // Import the 'fs' module to read SSL certificate files
+
+//Same code using https without
 
 const app = express();
 const port = 3000;
