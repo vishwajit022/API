@@ -1,48 +1,33 @@
-import https from "https";
 import express from "express";
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-const __dirname = dirname(fileURLToPath(
-    import.meta.url));
+import bodyParser from "body-parser";
+import https from "https"; // Import the 'https' module
+import fs from "fs"; // Import the 'fs' module to read SSL certificate files
+
+const app = express();
+const port = 3000;
 
 app.use(express.static("public"));
 app.use(bodyParser.urlencoded({ extended: true }));
 
+app.get("/", async(req, res) => {
+    try {
+        const options = {
+            hostname: "bored-api.appbrewery.com",
+            port: 443,
+            path: "/random",
+            method: "GET",
+        };
 
-const app = express();
-
-app.get("/", (req, res) => {
-    const options = {
-        hostname: "https://bored-api.appbrewery.com",
-        path: "/api/activity",
-        method: "GET",
-    };
-
-    const request = https.request(options, (response) => {
-        let data = "";
-        console.log(`Response status code: ${response.statusCode}`);
-
-        response.on("data", (chunk) => {
-            data += chunk;
-        });
-
-        response.on("end", () => {
-            try {
-                const result = JSON.parse(data);
-                res.render("./views/index.ejs", { activity: result.activity });
-            } catch (error) {
-                console.error("Failed to parse response", error.message);
-                res.status(500).send("Failed to send Activity. Please try again");
-            }
-        });
-    });
-
-    request.on("error", (error) => {
+        const response = await makeHttpsRequest(options);
+        const result = JSON.parse(response);
+        console.log(result);
+        res.render("index.ejs", { data: result });
+    } catch (error) {
         console.error("Failed to make request:", error.message);
-        res.status(500).send("Failed to fetch activity. Please try again");
-    });
-
-    request.end();
+        res.render("index.ejs", {
+            error: error.message,
+        });
+    }
 });
 
 app.post("/", async(req, res) => {
@@ -50,14 +35,25 @@ app.post("/", async(req, res) => {
         console.log(req.body);
         const type = req.body.type;
         const participants = req.body.participants;
-        const response = await axios.get(
-            `https://bored-api.appbrewery.com/filter?type=${type}&participants=${participants}`
-        );
-        const result = response.data;
-        console.log(result);
-        res.render("index.ejs", {
-            data: result[Math.floor(Math.random() * result.length)],
-        });
+        const options = {
+            hostname: "bored-api.appbrewery.com",
+            port: 443,
+            path: `/filter?type=${type}&participants=${participants}`,
+            method: "GET",
+        };
+
+        const response = await makeHttpsRequest(options);
+        const result = JSON.parse(response);
+
+        if (result.length === 0) {
+            res.render("index.ejs", {
+                error: "No activities that match your criteria.",
+            });
+        } else {
+            res.render("index.ejs", {
+                data: result[Math.floor(Math.random() * result.length)],
+            });
+        }
     } catch (error) {
         console.error("Failed to make request:", error.message);
         res.render("index.ejs", {
@@ -66,7 +62,29 @@ app.post("/", async(req, res) => {
     }
 });
 
-
-app.listen(3000, () => {
-    console.log("Server is running on port 3000");
+app.listen(port, () => {
+    console.log(`Server running on port: ${port}`);
 });
+
+// Function to make an HTTPS request
+function makeHttpsRequest(options) {
+    return new Promise((resolve, reject) => {
+        const req = https.request(options, (res) => {
+            let data = "";
+
+            res.on("data", (chunk) => {
+                data += chunk;
+            });
+
+            res.on("end", () => {
+                resolve(data);
+            });
+        });
+
+        req.on("error", (error) => {
+            reject(error);
+        });
+
+        req.end();
+    });
+}
