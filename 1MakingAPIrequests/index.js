@@ -5,8 +5,13 @@ import axios from "axios";
 const app = express();
 const port = 3000;
 
+//app.use(express.static("public")); is a common configuration in Express applications to serve static files, 
+//and it simplifies the process of making these assets available to clients without needing to write custom routes 
+//for each individual file.
 app.use(express.static("public"));
 app.use(bodyParser.urlencoded({ extended: true }));
+//app.use(bodyParser.urlencoded({ extended: true })); is a common configuration when you expect to receive data from HTML 
+//forms in your Express application, allowing you to easily parse and work with that data on the server side.
 
 app.get("/", async(req, res) => {
     try {
@@ -24,14 +29,14 @@ app.get("/", async(req, res) => {
 
 app.post("/", async(req, res) => {
     try {
-        console.log(req.body);
+
         const type = req.body.type;
         const participants = req.body.participants;
         const response = await axios.get(
             `https://bored-api.appbrewery.com/filter?type=${type}&participants=${participants}`
         );
         const result = response.data;
-        console.log(result);
+
         res.render("index.ejs", {
             data: result[Math.floor(Math.random() * result.length)],
         });
