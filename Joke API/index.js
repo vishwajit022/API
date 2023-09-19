@@ -15,25 +15,27 @@ app.get("/random", (req, res) => {
 })
 
 //2. GET a specific joke
-app.get("/joke/:id?", (req, res) => {
-    if (req.params.id) {
-        const id = parseInt(req.params.id);
-        const j = jokes.find((a) => a.id === id);
-        if (j) {
-            res.json(j);
-        } else {
-            res.status(404).json({ error: "Joke not found" });
-        }
+app.get("/jokes", (req, res) => {
+    const id = parseInt(req.query.id);
+
+
+
+    const j = jokes.find((a) => a.id === id);
+
+    if (j) {
+        res.json(j);
     } else {
-        // Handle the case when no id is provided.
-        res.status(400).json({ error: "Please provide an id" });
+        res.status(404).json({ error: "Joke not found" });
     }
 });
 
+
+
+
 //3. GET a jokes by filtering on the joke type
 app.get("/filter", (req, res) => {
-    if (req.query.type) {
-        const type = req.query.type;
+    if (req.params.type) {
+        const type = req.params.type;
         //It filters and returns a bunch
         const t = jokes.filter((a) => a.jokeType === type)
         if (t) {
@@ -51,26 +53,59 @@ app.get("/filter", (req, res) => {
 
 //4. POST a new joke
 
-app.post("/input", (req, res) => {
-    if (!req.body.text || !req.body.type) {
-        return res.status(400).json({ error: "Both 'text' and 'type' fields are required." });
-    }
-
+app.post("/jokes", (req, res) => {
     const newJoke = {
         id: jokes.length + 1,
         jokeText: req.body.text,
         jokeType: req.body.type,
-    };
-    //Here req.body.... it requires bodyparser
-
+    }
     jokes.push(newJoke);
-    res.status(201).json(newJoke);
-});
+    res.json(newJoke);
+})
 
 
 //5. PUT a joke
+//Here we are going to replace the whole joke
+
+app.put("/jokes", (req, res) => {
+    const id = parseInt(req.body.id);
+    const replacementJoke = {
+        id: id,
+        jokeText: req.body.text,
+        jokeType: req.body.type,
+    };
+
+    const index = jokes.findIndex((j) =>
+        j.id === id
+    );
+    jokes[index] = replacementJoke;
+    res.json(replacementJoke);
+});
+
+
 
 //6. PATCH a joke
+
+app.patch("/jokes", (req, res) => {
+    const id = parseInt(req.params.id);
+    const index = jokes.findIndex((j) => j.id === id);
+
+    if (index !== -1) {
+        const existingJoke = jokes[index];
+        const replacementJoke = {
+            id: id,
+            // If values are provided in the request body, update them; otherwise, use existing values.
+            jokeText: req.body.text || existingJoke.jokeText,
+            jokeType: req.body.type || existingJoke.jokeType,
+        };
+
+        jokes[index] = replacementJoke;
+        res.json(jokes[index]);
+    } else {
+        res.status(404).json({ error: "Joke not found" });
+    }
+});
+
 
 //7. DELETE Specific joke
 
